@@ -112,6 +112,8 @@ From the Xilinx documentation on setting up remote hosts, it states:
 
 Interpreting this as directly as possible, it appears to suggest to imply that all the paths must be identical on both the client and the remote host. (If they are not identical, how would the remote host know where to look for the folders?) This means that the folder on both the client or the remote host can be in a user folder (e.g. ~/Documents), since that path depends on the username.
 
+Confirmation that this is the right approach is provided by the log entry `CMD  1: ssh -q -o ConnectTimeout=30 -o ConnectionAttempts=3 -o BatchMode=yes remotehost cd \"/opt/projects/fpga_projects\"; \"/opt/projects/fpga_projects/blinky/blinky.runs/.jobs/job1.sh\"` printed to stdout in the terminal that `vivado` was launched from, after running the remote job. The command attempts to change to the same directory on the server as is used on the client.
+
 NOTE: In this example setup, both the client and the remote host both have the same version of Vivado installed, but the installations are separate (one is not a mounted copy of the other). This makes no difference compared to installing once and using a mounted copy. If this approach is used instead, for consistency with the mounting described here, install Vivado on the server and then mount it on the client.
 
 To test the same-path hypothesis, we will create a folder `/opt/projects`, which will be the location of all project folders. This folder will exist on the remote host, and be mounted on the client. Create it using:
@@ -163,3 +165,31 @@ NOTE: The `anonuid` and `anongid` are the IDs of the SSH user, `username`, on th
 Save and close the file, and restart NFS using `sudo systemctl restart nfs-kernel-server`.
 
 Now create the mount point on the client: `sudo mkdir /opt/projects`. Ensure that the path is the same, to keep Vivado happy.
+
+The final step is to mount the directory, manually at first, to check it works:
+
+[,bash]
+----
+# ON CLIENT
+
+mount remotehost:/opt/projects /opt/projects
+----
+
+Change into that folder on the client, and run `touch hello`. If this did not give permission-denied issues, then the setup is working. You can check that file exists on the server, and should be owned by `username`, even though it is potentially owned by a different username on the client.
+
+=== Troubleshooting
+
+After completing the setup above, some issues remained. These are explained below.
+
+First, there appears to be an issue with OpenSSL versions when running on Linux Mint 21.1/21.2. The following message is printed to stdout when attempting to run the remote host runs:
+
+[,bash]
+----
+CMD  1: ssh -q -o ConnectTimeout=30 -o ConnectionAttempts=3 -o BatchMode=yes remotehost cd \"/home/jrs/Documents/git/rv0\"; \"/opt/projects/fpga_projects/blinky/blinky.runs/.jobs/job6.sh\"
+# while {$doneCount<$launchCount} {
+#     vwait doneCount ;# Wait for all jobs to finish
+# }
+  1-> OpenSSL version mismatch. Built against 30000020, you have 30100000
+  1 END
+----
+
