@@ -1,0 +1,165 @@
+= A collection of small example FPGA designs
+
+== Run Vivado as a remote host
+
+This setup is useful if you have a client computer where you want to do local FPGA debugging (i.e. with the physical FPGA plugged in), but a more powerful PC somewhere else where you can run synthesis/implementation.
+
+This setup was tested using Linux Mint 21.1 on both computers, and Vivado 2023.2
+installed on both computers.
+
+General information about setting up remote hosts is provided https://docs.xilinx.com/r/en-US/ug904-vivado-implementation/Using-Remote-Hosts-and-Compute-Clusters[here]; however, some details are missing/not explained in sufficient detail, such as exactly how to configure SSH, how to set up mounts, and the https://support.xilinx.com/s/question/0D52E00006iHlI5SAK/lauching-runs-on-a-remote-host-on-ubuntu?language=en_US[dash/bash detail].
+
+Follow the steps below to get set up.
+
+=== Configure SSH
+
+This configuration assumes you are working on a local network, without any firewall rules setup that will interfere with connections. Before you begin, ping the computer you want to use as the remote host from the client using `ping remotehost`.
+
+A few notes:
+* Get `remotehost` from your router page.
+* If you have a flaky router like I currently have, you can make a hostname based on the IP address by adding an entry like `ip-address remotehost` to your `/etc/hosts` file on the client
+
+Make sure ping works before moving one.
+
+On the computer that will become the remote host, install SSH server by running `sudo apt install openssh-server`. You should then be able to test it by logging in from the client, using your remote-host username and password:
+
+[,bash]
+----
+# Check this works (password-based login) before moving on
+ssh username@remotehost
+----
+
+Now that SSH works, you need to configure it so that a password-less login is available for use by Vivado. The way we will do that here is by generating an SSH keypair which does not use a passphrase.
+
+(On a personal network you trust, this is sufficient security. If you need more security, do not follow this approach. Instead, use a passphrase, and then use `ssh-add` every time you want to access the remote host.)
+
+[,bash]
+----
+# ON CLIENT
+
+# Generate the public/private keypair, do not add a passphrase
+cd ~/.ssh
+ssh-keygen -t ed25519 -f vivado_key
+----
+
+This will create two files: `vivado_key` and `vivado_key.pub`. Leave the first where it is (`~/.ssh`), and move the second to the `~/.ssh` folder on the remote host using any method (`*.pub` is not a private file).
+
+On the remote host, open the `~/.ssh/authorized_keys` file (or create it if it does not exist), and paste the contents of `~/.ssh/vivado_key.pub` to the last line. Then, double check the permissions of the file are correct by running:
+
+[,bash]
+----
+# ON REMOTE HOST
+
+chmod 640 ~/.ssh/authorized_keys
+----
+
+Finally, set up the client so that attempts to ssh into the remote host via its hostname use the right settings. Open `~/.ssh/config` on the client, and place the following contents there:
+
+[,conf]
+----
+Host remotehost
+     IdentitiesOnly yes
+     IdentityFile ~/.ssh/vivado_key
+     User username
+----
+
+Change `username` to your username on the remote host. Now, check that password-less SSH works by running `ssh remotehost`.
+
+You need Vivado to work inside this remote shell, which means sourcing the environment properly. If you are unable to run `vivado` inside the ssh shell, then make sure something like this is added to your `~/.bashrc` on the remote host:
+
+[,bash]
+----
+# Configure the environment for running Vivado
+source /tools/Xilinx/Vivado/2023.2/settings64.sh
+----
+
+Close the ssh session and restart it, then verify that `vivado` is now available.
+
+=== Configure Client Shell
+
+Due to an issue with Vivado's scripts, the client shell must be configured to use bash instead of dash (default on Ubuntu) (see https://support.xilinx.com/s/question/0D52E00006iHlI5SAK/lauching-runs-on-a-remote-host-on-ubuntu?language=en_US[here]). You can do this by running:
+
+[,bash]
+----
+# ON CLIENT
+
+# Pick "No" (i.e. don't use dash as the system shell)
+sudo dpkg-reconfigure dash
+----
+
+Note that this is on the client computer, not on the remote host.
+
+=== Configure Vivado
+
+Open a Vivado project and click "Run synthesis". Select "Launch runs on remote hosts" and click "Configure Hosts". Inside the settings, click "Manual Configuration". Add a new host, specifying the `remotehost` as the "Name" and choose a number of jobs based on the number of cores on the remote host. Leave the ssh command default, and click "Test". The test should pass.
+
+If the test fails with a message about ping failing, then go back and check that the hostname is correct (try pinging the hostname manually, and check all IP addresses if any are involved). This is a networking issue, not an SSH problem.
+
+If the test fails and ping is not mentioned, double check that the shell is reconfigured to use `bash` as described above.
+
+If the tests continue to fail, ensure that it is possible to login using `ssh remotehost`, and that running `vivado` in this shell works.
+
+=== Configure Mounted Directories
+
+At this point, the connection is set up and ready, but it will still not be possible to run jobs, because the remote host and the local computer must both work from a common working directory.
+
+If you try to synthesize a design without setting this up, it will appear like it is working, but then will hang in the "Queued" state indefinitely, as described https://support.xilinx.com/s/question/0D52E00006txIsESAU/unable-to-start-any-runs-with-remote-host-with-vivado-20212-tasks-remain-queued?language=en_US[here].
+
+From the Xilinx documentation on setting up remote hosts, it states:
+
+"Vivado IDE project files (.xpr) and directories (.data and .runs) must be visible from the mounted file systems on remote machines. If the design data is saved to a local disk, it may not be visible from remote machines."
+-- Using Remote Hosts and Compute Clusters, UG904
+
+Interpreting this as directly as possible, it appears to suggest to imply that all the paths must be identical on both the client and the remote host. (If they are not identical, how would the remote host know where to look for the folders?) This means that the folder on both the client or the remote host can be in a user folder (e.g. ~/Documents), since that path depends on the username.
+
+NOTE: In this example setup, both the client and the remote host both have the same version of Vivado installed, but the installations are separate (one is not a mounted copy of the other). This makes no difference compared to installing once and using a mounted copy. If this approach is used instead, for consistency with the mounting described here, install Vivado on the server and then mount it on the client.
+
+To test the same-path hypothesis, we will create a folder `/opt/projects`, which will be the location of all project folders. This folder will exist on the remote host, and be mounted on the client. Create it using:
+
+[,bash]
+----
+# ON REMOTE HOST
+
+# Create the folder, and change ownership
+sudo mkdir /opt/projects
+sudo chown username:username /opt/projects
+----
+
+NOTE: It is important for this folder to be owned by the SSH user, so that Vivado runs inside the remote host can read/write the projects directory.
+
+To mount this folder on the client, use NFS. Assuming as before a trusted private network in which the remote host and client can communicate, with no firewalls in use, the setup is as follows (see https://www.digitalocean.com/community/tutorials/how-to-set-up-an-nfs-mount-on-ubuntu-22-04[here] for reference)
+
+First, install the NFS server as follows:
+
+[,bash]
+----
+# ON REMOTE HOST
+
+sudo apt install nfs-kernel-server
+----
+
+On the client, you need to install the NFS client:
+
+[,bash]
+----
+# ON REMOTE HOST
+
+sudo apt install nfs-common
+----
+
+To make the `/opt/projects` folder available for the client, open `/etc/exports` on the remote server with sudo, and add the following lines:
+
+[,conf]
+----
+# Replace the network with the address of your own private network.
+# /24 means that any clients with an IP address of 192.168.1.* are allowed.
+/opt/projects 192.168.1.0/24(rw,sync,no_subtree_check,all_squash,anonuid=1000,anongid=1000)
+----
+
+Specifying `all_squash` will map reads and writes by any user on the client to the specified UID and GID on the host, which we will make match the SSH username. This decouples the username of the account on the client from the user on the remote host.
+
+NOTE: The `anonuid` and `anongid` are the IDs of the SSH user, `username`, on the remote host. Find the numbers by running `id -u username` for the UID, and `id -g username` for the GID. Here, we assume they are 1000.
+
+Save and close the file, and restart NFS using `sudo systemctl restart nfs-kernel-server`.
+
+Now create the mount point on the client: `sudo mkdir /opt/projects`. Ensure that the path is the same, to keep Vivado happy.
