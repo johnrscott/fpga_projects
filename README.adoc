@@ -181,6 +181,8 @@ Change into that folder on the client, and run `touch hello`. If this did not gi
 
 After completing the setup above, some issues remained. These are explained below.
 
+==== OpenSSL Version Mismatch
+
 First, there appears to be an issue with OpenSSL versions when running on Linux Mint 21.1/21.2. The following message is printed to stdout when attempting to run the remote host runs:
 
 [,bash]
@@ -193,3 +195,206 @@ CMD  1: ssh -q -o ConnectTimeout=30 -o ConnectionAttempts=3 -o BatchMode=yes rem
   1 END
 ----
 
+When running `ssh -V` using the regular Ubuntu terminal, the result is `OpenSSH_8.9p1 Ubuntu-3ubuntu0.6, OpenSSL 3.0.2 15 Mar 2022`, where the OpenSSL version `3.0.2` is presumably the `30000020` in the error. (Assuming this is a client side error because the log shows up directly after running the `ssh` command, which would run on the client side.)
+
+The issue is reproducible by running `ssh` from inside Vivado tcl:
+
+[,bash]
+----
+# Open Vivado in tcl mode
+vivado -mode tcl
+
+# Run SSH from inside Vivado
+Vivado% ssh
+
+# WARNING: [Common 17-259] Unknown Tcl command 'ssh -V' sending command to the OS # shell for execution. It is recommended to use 'exec' to send the command to the # OS shell.
+# OpenSSL version mismatch. Built against 30000020, you have 30100000
+# child process exited abnormally
+----
+
+Prepending `exec` reduces the error to `OpenSSL version mismatch. Built against 30000020, you have 30100000`. So the issue is the way that Vivado/TCL interact with ssh. In particular, the Vivado/TCL environment may be using a different version of OpenSSL.
+
+To confirm this, compare the outputs from `openssl version` running in a regular Ubuntu terminal, and running from within Vivado/TCL:
+
+[,bash]
+----
+# Regular Ubuntu
+openssl version
+# OpenSSL 3.0.2 15 Mar 2022 (Library: OpenSSL 3.0.2 15 Mar 2022)
+
+# Vivado/TCL
+openssl version
+# 3.0.2 15 Mar 2022 (Library: OpenSSL 3.1.0-dev )
+# 3.1.0 is the wrong 30100000 library referenced in the error
+----
+
+Running `whereis openssl` returns `/usr/bin/openssl` in both Vivado/TCL and the Ubuntu terminal, so the issue is not the binary. To check the libraries that each attempt to link, run `ldd /usr/bin/openssl` from Vivado/TCL and the Ubuntu terminal:
+
+[,bash]
+----
+# Regular Ubuntu
+linux-vdso.so.1 (0x00007ffc8a867000)
+libssl.so.3 => /lib/x86_64-linux-gnu/libssl.so.3 (0x00007f0f3594a000)
+libcrypto.so.3 => /lib/x86_64-linux-gnu/libcrypto.so.3 (0x00007f0f35400000)
+libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f0f35000000)
+/lib64/ld-linux-x86-64.so.2 (0x00007f0f35b02000)
+
+# Vivado/TCL
+linux-vdso.so.1 (0x00007fff555fe000)
+libssl.so.3 => /tools/Xilinx/Vivado/2023.2/tps/lnx64/python-3.8.3/lib/libssl.so.3 (0x00007f042b800000)
+libcrypto.so.3 => /tools/Xilinx/Vivado/2023.2/tps/lnx64/python-3.8.3/lib/libcrypto.so.3 (0x00007f042b000000)
+libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f042ac00000)
+libz.so.1 => /lib/x86_64-linux-gnu/libz.so.1 (0x00007f042bb70000)
+libdl.so.2 => /lib/x86_64-linux-gnu/libdl.so.2 (0x00007f042bb69000)
+libpthread.so.0 => /lib/x86_64-linux-gnu/libpthread.so.0 (0x00007f042bb64000)
+	/lib64/ld-linux-x86-64.so.2 (0x00007f042bca0000)
+----
+
+The issue is `libssl`, which is automatically being taken from a Xilinx directory. The reason for the different is that the `LD_LIBRARY_PATH` variable is present _inside_ the Vivado/TCL environment:
+
+[,bash]
+----
+LD_LIBRARY_PATH=/tools/Xilinx/Vivado/2023.2/tps/lnx64/python-3.8.3/lib:/tools/Xilinx/Vivado/2023.2/tps/lnx64/java-cef-95.0.4638.69/bin/lib/linux64:/tools/Xilinx/Vivado/2023.2/tps/lnx64/javafx-sdk-17.0.1/lib:/tools/Xilinx/Vivado/2023.2/lib/lnx64.o/Default:/tools/Xilinx/Vivado/2023.2/lib/lnx64.o:/tools/Xilinx/Vivado/2023.2/tps/lnx64/jre17.0.7_7/lib/:/tools/Xilinx/Vivado/2023.2/tps/lnx64/jre17.0.7_7/lib//server:/tools/Xilinx/Vivado/2023.2/bin/../lnx64/tools/dot/lib
+----
+
+Note that this variable is not sourced by `settings64.sh` (the main environment setup for Vivado) -- it is specifically added for the Vivado/TCL console.
+
+Looking https://askubuntu.com/questions/1438582/how-to-install-openssl-3-0-7-on-ubuntu-22-04[here] shows that in Nov 2022, Ubuntu 22.04 was using OpenSSL version 3.0.2, and that the package version was as follows (pasted from that answer):
+
+[,bash]
+----
+$ apt list openssl
+Listing... Done
+openssl/jammy-security,now 3.0.2-0ubuntu1.7 amd64 [installed,automatic]
+----
+
+Running this command on Linux Mint Cinnamon 21.1 (based on Ubuntu 22.04) results in:
+
+[,bash]
+----
+$ apt list openssl
+Listing... Done
+openssl/jammy-updates,jammy-security,now 3.0.2-0ubuntu1.12 amd64 [installed]
+openssl/jammy-updates,jammy-security 3.0.2-0ubuntu1.12 i386
+----
+
+This shows that broadly the same version is still in use. The https://docs.xilinx.com/r/en-US/ug973-vivado-release-notes-install-license/Supported-Operating-Systems[official operating system support] for Vivado 2023.2 lists Ubuntu 22.04 LTS (long term support). Testing on Ubuntu 22.04.3 (LTS) gave:
+
+[,bash]
+----
+$ apt list openssl -a
+Listing... Done
+openssl/jammy-updates,jammy-security,now 3.0.2-0ubuntu1.10
+amd64 [installed,automatic]
+openssl/jammy 3.0.2-0ubuntu1 amd64
+----
+
+This shows the same version is also in use in the LTS version.
+
+Since the path to the Vivado-packaged OpenSSL library is a python library path `/tools/Xilinx/Vivado/2023.2/tps/lnx64/python-3.8.3/lib/libssl.so.3`, it is possible that a python package is responsible for bringing in the recent OpenSSl version.
+
+
+===== Potential Solutions
+
+Here are the options:
+
+* Upgrade the Ubuntu SSH and OpenSSL libraries to match those inside the Vivado distribution. This might be tricky, especially given the large number of things that depend on OpenSSL in the Ubuntu distribution. See https://unix.stackexchange.com/questions/753182/is-it-possible-to-get-openssl-3-1-on-ubuntu-22-04[here] for some notes.
+* Try to find a way to have Vivado use a specific SSH version which is compatible with the Vivado-packaged OpenSSL version. This approach may be more contained (only requires a new ssh binary somewhere, may not interfere with Ubuntu).
+* Try to force the Vivado/TCL environment to link the OS-level OpenSSL library, and not its own packaged version. It may be tricky to achieve this without messing up linking of other packaged libraries that Vivado needs.
+
+The best solution would have been if Vivado had also packaged an `ssh` binary for its own use. This is not the case, because running `sudo apt remove openssh-client`, followed by running `ssh` inside the Vivado/TCL console gives `no such file or directory`.
+
+Going to try removing the Vivado-packaged OpenSSL `libssl.so.3` in the `/tools/Xilinx/Vivado/2023.2/tps/lnx64/python-3.8.3/lib`:
+
+[,bash]
+----
+cd /tools/Xilinx/Vivado/2023.2/tps/lnx64/python-3.8.3/lib
+mv libssl.so.3 old_libssl.so.3
+----
+
+Now, (Vivado/TCL) `ldd /usr/bin/openssl` links to `/tools/Xilinx/Vivado/2023.2/lib/lnx64.o/libssl.so.3`, so removed that one too.
+
+[,bash]
+----
+cd /tools/Xilinx/Vivado/2023.2/lib/lnx64.o
+mv libssl.so.3 old_libssl.so.3
+----
+
+Now `libssl.so.3` comes from the OS (`/lib/x86_64-linux-gnu/libssl.so.3`), but the OpenSSL version error remains. This is likely due to `libcrypto.so.3`, which is also part of OpenSSL:
+
+[,bash]
+----
+cd /tools/Xilinx/Vivado/2023.2/tps/lnx64/python-3.8.3/lib
+mv libcrypto.so.3 old_libcrypto.so.3
+cd /tools/Xilinx/Vivado/2023.2/lib/lnx64.o
+mv libcrypto.so.3 old_libcrypto.so.3
+----
+
+Now Vivado/TCL `ldd /usr/bin/openssl` does not show any libraries linked from inside the Vivado installation directory:
+
+[,bash]
+----
+Vivado% exec ldd /usr/bin/openssl
+# linux-vdso.so.1 (0x00007ffd4c31f000)
+# libssl.so.3 => /lib/x86_64-linux-gnu/libssl.so.3 (0x00007f520e347000)
+# libcrypto.so.3 => /lib/x86_64-linux-gnu/libcrypto.so.3 (0x00007f520de00000)
+# libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f520da00000)
+# /lib64/ld-linux-x86-64.so.2 (0x00007f520e4ff000)
+----
+
+Running `ssh` now works, confirming the issue with the libraries. Removing the Vivado-packaged libraries in this way has not solved the problem; now, arbitrary code invoked by Vivado may find an older OpenSSL version than it requires, and raise the error in the other direction. We will cross that bridge when we come to it.
+
+==== Synthesis Failed
+
+In my case, after fixing the OpenSSL error, I progressed from hanging at the `Queued` stage to getting a `Synthesis Failed` message. I found no errors in the stdout in the Vivado terminal, or errors in the messages window.
+
+The first place to check is the `runme.log` file in the `synth_1` folder inside the `.runs` directory:
+
+[,bash]
+----
+# ON CLIENT OR REMOTE HOST
+
+cd /opt/projects/fpga_projects/blinky/blinky.runs/synth_1
+cat runme.log
+----
+
+The result was:
+
+----
+*** Running vivado
+    with args -log top_wrapper.vds -m64 -product Vivado -mode batch -messageDb vivado.pb -notrace -source top_wrapper.tcl
+
+./ISEWrap.sh: 37: vivado: not found
+----
+
+Tracing through how the remote call happens
+
+1. The first step is the ssh command listed in the stdout (on the terminal vivado was opened from) when the remote host is invoked: `CMD  1: ssh -q -o ConnectTimeout=30 -o ConnectionAttempts=3 -o BatchMode=yes remotehost cd \"/opt/projects/fpga_projects\"; \"/opt/projects/fpga_projects/blinky/blinky.runs/.jobs/job1.sh\"`
+2. Looking at the script `job1.sh`, the variable `HD_LDIR` is set to the directory of the `job1.sh` file, using the `dirname` command. Then, the `runme.sh` script is invoked relative to this directory on line 24.
+
+Manually SSHing into the remote host, changing into the `.jobs` directory and running `job1.sh` directly exits after a few moments with no errors. Looking at the `runme.log`, Vivado is found in this case:
+
+----
+*** Running vivado
+    with args -log top_wrapper.vds -m64 -product Vivado -mode batch -messageDb vivado.pb -notrace -source top_wrapper.tcl
+
+
+****** Vivado v2023.2 (64-bit)
+  **** SW Build 4029153 on Fri Oct 13 20:13:54 MDT 2023
+  **** IP Build 4028589 on Sat Oct 14 00:45:43 MDT 2023
+  **** SharedData Build 4025554 on Tue Oct 10 17:18:54 MDT 2023
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+    ** Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
+----
+
+So the issue is something to do with the way SSH invokes the script. Back on the client computer, run the SSH command as a test:
+
+[,bash]
+----
+# ON CLIENT
+
+# Remove the escaped characters in the paths
+ssh -q -o ConnectTimeout=30 -o ConnectionAttempts=3 -o BatchMode=yes remotehost cd "/opt/projects/fpga_projects"; "/opt/projects/fpga_projects/blinky/blinky.runs/.jobs/job1.sh"
+----
+
+It looked like this also worked, which is odd since this is the command the Vivado is also running.
