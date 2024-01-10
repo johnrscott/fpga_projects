@@ -1,0 +1,8 @@
+= Blinking LED
+
+This is a very simple example showing a flashing LED with a period of 1Hz (assuming a 100MHz input clock from the board).
+
+The design targets the Arty A7 development board. LED LD0 flashes, and button BTN0 is a synchronous reset.
+
+
+
