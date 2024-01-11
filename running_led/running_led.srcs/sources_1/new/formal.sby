@@ -1,0 +1,12 @@
+[options]
+mode prove
+
+[engines]
+smtbmc
+
+[script]
+read -formal running_led.v
+prep -top running_led
+
+[files]
+running_led.v

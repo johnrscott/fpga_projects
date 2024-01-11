@@ -9,10 +9,10 @@ module running_led(
    parameter	    CLK_RATE_HZ = 100_000_000;
 
    // Current state of the running LED
-   reg [2:0]	    state;
+   reg [2:0]	    state = 0;
    
    // Define the tick signal that triggers a change of state
-   reg [31:0]	    wait_counter;
+   reg [31:0]	    wait_counter = CLK_RATE_HZ - 1;
 
    always @(posedge clk) begin
       if (rst || (wait_counter == 0))
@@ -48,5 +48,20 @@ module running_led(
       endcase
    end
    
+`ifdef FORMAL
+
+   // For a check like this, notice how it fails if you remote
+   // the initialisation line state = 0. This is because state
+   // could begin with any value in theory, so it could violate
+   // this check right at the start.
+   always @(posedge clk)
+     no_invalid_states: assert(state <= 5);
+
+   // Check that the only valid outputs are exactly one LED
+   // lit at a time
+   always @(posedge clk)
+     exactly_one_led: assert($onehot(leds));
+   
+`endif
 		    
 endmodule
