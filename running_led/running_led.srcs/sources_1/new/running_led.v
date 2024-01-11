@@ -50,22 +50,22 @@ module running_led(
    
 `ifdef FORMAL
 
-
+   always @(posedge clk)
+     if (rst)
+       reset_works: assert((wait_counter == (CLK_RATE_HZ - 1)) && (state == 0));
+   
    // Check that the only valid outputs are exactly one LED
    // lit at a time
-   always @(posedge clk)
-     exactly_one_led: assert($onehot(leds));
+   exactly_one_led: assert property($onehot(leds));
    
    // For a check like this, notice how it fails if you remote
    // the initialisation line state = 0. This is because state
    // could begin with any value in theory, so it could violate
    // this check right at the start.
-   property state_is_valid;
-      state < 6;
-   endproperty
-   
-   no_invalid_states: assert property(state_is_valid);
+   no_invalid_states: assert property(state < 6);
 
+   // Check the counter is always in range
+   wait_counter_value: assert property(wait_counter < CLK_RATE_HZ);
    
 `endif
 		    

@@ -5,7 +5,7 @@ mode prove
 smtbmc
 
 [script]
-verific -sv running_led.v
+read -formal running_led.v
 prep -top running_led
 
 [files]
