@@ -50,17 +50,22 @@ module running_led(
    
 `ifdef FORMAL
 
-   // For a check like this, notice how it fails if you remote
-   // the initialisation line state = 0. This is because state
-   // could begin with any value in theory, so it could violate
-   // this check right at the start.
-   always @(posedge clk)
-     no_invalid_states: assert(state <= 5);
 
    // Check that the only valid outputs are exactly one LED
    // lit at a time
    always @(posedge clk)
      exactly_one_led: assert($onehot(leds));
+   
+   // For a check like this, notice how it fails if you remote
+   // the initialisation line state = 0. This is because state
+   // could begin with any value in theory, so it could violate
+   // this check right at the start.
+   property state_is_valid;
+      state < 6;
+   endproperty
+   
+   no_invalid_states: assert property(state_is_valid);
+
    
 `endif
 		    
