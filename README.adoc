@@ -1,5 +1,49 @@
 = A collection of small example FPGA designs
 
+This repository contains some example designs based on the https://zipcpu.com/tutorial/[tutorial series] by ZipCPU.
+
+== Installing SymbiYosys (formal verification)
+
+https://github.com/YosysHQ/oss-cad-suite-build[OSS CAD Suite] is a set of open source tools for digital logic design, including tools for formal verification.
+
+To install, download the latest release from the https://github.com/YosysHQ/oss-cad-suite-build/releases[releases page], and 
+
+[,bash]
+----
+mkdir -p $HOME/tools/ && cd $HOME/tools
+# Replace with the latest release 
+wget https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2024-01-10/oss-cad-suite-linux-x64-20240110.tgz
+tar xvf oss-cad-suite-linux-x64-20240110.tgz
+----
+
+You need to add the binary tools to the path. A simple way to do this is to source `oss-cad-suite/environment` in whatever script you are using to source Vivado (see `settings.sh`). This will give you a prefix `(OSS CAD Suite)` before the prompt to let you know you have everything available.
+
+The documentation for SymbiYosys is located https://yosyshq.readthedocs.io/projects/sby/en/latest/install.html[here]. The getting-started example is copied into the `verify-example` folder (an implementation of a FIFO buffer). To run the example, follow these steps:
+
+[,bash]
+----
+# Source the tools
+. settings.sh
+cd verify-example
+# Run the formal verification
+sby -f fifo.sby
+----
+
+The verification should complete successfully (this will also confirm that your installation works). To see what happens when a test fails, you can run the following instead:
+
+[,bash]
+----
+sby -f fifo.sby nofullskip
+----
+
+This will produce a counterexample wave, which can be viewed using:
+
+[,bash]
+----
+gtkwave fifo_nofullskip/engine_0/trace.vcd
+----
+
+
 == Run Vivado as a remote host
 
 This setup is useful if you have a client computer where you want to do local FPGA debugging (i.e. with the physical FPGA plugged in), but a more powerful PC somewhere else where you can run synthesis/implementation.
