@@ -1,5 +1,18 @@
+[tasks]
+unbounded_check
+bounded_check
+cover_check
+
 [options]
-mode prove
+unbounded_check: mode prove
+bounded_check: 
+mode bmc
+depth 20
+
+cover_check:
+mode cover
+depth 20
+--
 
 [engines]
 smtbmc

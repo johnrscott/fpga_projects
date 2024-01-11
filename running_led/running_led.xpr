@@ -167,15 +167,15 @@
         <Option Name="TopAutoSet" Val="TRUE"/>
       </Config>
     </FileSet>
-    <FileSet Name="top_running_led_0_0" Type="BlockSrcs" RelSrcDir="$PSRCDIR/top_running_led_0_0" RelGenDir="$PGENDIR/top_running_led_0_0">
-      <Config>
-        <Option Name="TopModule" Val="top_running_led_0_0"/>
-        <Option Name="UseBlackboxStub" Val="1"/>
-      </Config>
-    </FileSet>
     <FileSet Name="top_clk_wiz_0_0" Type="BlockSrcs" RelSrcDir="$PSRCDIR/top_clk_wiz_0_0" RelGenDir="$PGENDIR/top_clk_wiz_0_0">
       <Config>
         <Option Name="TopModule" Val="top_clk_wiz_0_0"/>
+        <Option Name="UseBlackboxStub" Val="1"/>
+      </Config>
+    </FileSet>
+    <FileSet Name="top_running_led_0_0" Type="BlockSrcs" RelSrcDir="$PSRCDIR/top_running_led_0_0" RelGenDir="$PGENDIR/top_running_led_0_0">
+      <Config>
+        <Option Name="TopModule" Val="top_running_led_0_0"/>
         <Option Name="UseBlackboxStub" Val="1"/>
       </Config>
     </FileSet>
@@ -212,11 +212,9 @@
       <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
       <RQSFiles/>
     </Run>
-    <Run Id="top_running_led_0_0_synth_1" Type="Ft3:Synth" SrcSet="top_running_led_0_0" Part="xc7a35ticsg324-1L" ConstrsSet="top_running_led_0_0" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/top_running_led_0_0_synth_1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/top_running_led_0_0_synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/top_running_led_0_0_synth_1">
+    <Run Id="top_clk_wiz_0_0_synth_1" Type="Ft3:Synth" SrcSet="top_clk_wiz_0_0" Part="xc7a35ticsg324-1L" ConstrsSet="top_clk_wiz_0_0" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/top_clk_wiz_0_0_synth_1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/top_clk_wiz_0_0_synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/top_clk_wiz_0_0_synth_1">
       <Strategy Version="1" Minor="2">
-        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2023">
-          <Desc>Vivado Synthesis Defaults</Desc>
-        </StratHandle>
+        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2023"/>
         <Step Id="synth_design"/>
       </Strategy>
       <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
@@ -224,7 +222,7 @@
       <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
       <RQSFiles/>
     </Run>
-    <Run Id="top_clk_wiz_0_0_synth_1" Type="Ft3:Synth" SrcSet="top_clk_wiz_0_0" Part="xc7a35ticsg324-1L" ConstrsSet="top_clk_wiz_0_0" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/top_clk_wiz_0_0_synth_1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/top_clk_wiz_0_0_synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/top_clk_wiz_0_0_synth_1">
+    <Run Id="top_running_led_0_0_synth_1" Type="Ft3:Synth" SrcSet="top_running_led_0_0" Part="xc7a35ticsg324-1L" ConstrsSet="top_running_led_0_0" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/top_running_led_0_0_synth_1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/top_running_led_0_0_synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/top_running_led_0_0_synth_1">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2023">
           <Desc>Vivado Synthesis Defaults</Desc>
@@ -254,11 +252,9 @@
       <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
       <RQSFiles/>
     </Run>
-    <Run Id="top_running_led_0_0_impl_1" Type="Ft2:EntireDesign" Part="xc7a35ticsg324-1L" ConstrsSet="top_running_led_0_0" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="top_running_led_0_0_synth_1" IncludeInArchive="false" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/top_running_led_0_0_impl_1" AutoRQSDir="$PSRCDIR/utils_1/imports/top_running_led_0_0_impl_1">
+    <Run Id="top_clk_wiz_0_0_impl_1" Type="Ft2:EntireDesign" Part="xc7a35ticsg324-1L" ConstrsSet="top_clk_wiz_0_0" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="top_clk_wiz_0_0_synth_1" IncludeInArchive="false" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/top_clk_wiz_0_0_impl_1" AutoRQSDir="$PSRCDIR/utils_1/imports/top_clk_wiz_0_0_impl_1">
       <Strategy Version="1" Minor="2">
-        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2023">
-          <Desc>Default settings for Implementation.</Desc>
-        </StratHandle>
+        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2023"/>
         <Step Id="init_design"/>
         <Step Id="opt_design"/>
         <Step Id="power_opt_design"/>
@@ -273,7 +269,7 @@
       <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
       <RQSFiles/>
     </Run>
-    <Run Id="top_clk_wiz_0_0_impl_1" Type="Ft2:EntireDesign" Part="xc7a35ticsg324-1L" ConstrsSet="top_clk_wiz_0_0" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="top_clk_wiz_0_0_synth_1" IncludeInArchive="false" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/top_clk_wiz_0_0_impl_1" AutoRQSDir="$PSRCDIR/utils_1/imports/top_clk_wiz_0_0_impl_1">
+    <Run Id="top_running_led_0_0_impl_1" Type="Ft2:EntireDesign" Part="xc7a35ticsg324-1L" ConstrsSet="top_running_led_0_0" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="top_running_led_0_0_synth_1" IncludeInArchive="false" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/top_running_led_0_0_impl_1" AutoRQSDir="$PSRCDIR/utils_1/imports/top_running_led_0_0_impl_1">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2023">
           <Desc>Default settings for Implementation.</Desc>

@@ -1,7 +1,7 @@
 {
   "design": {
     "design_info": {
-      "boundary_crc": "0x24C650B7EC0ACEB3",
+      "boundary_crc": "0x808DC5BE02DF8E9C",
       "device": "xc7a35ticsg324-1L",
       "gen_directory": "../../../../running_led.gen/sources_1/bd/top",
       "name": "top",
@@ -65,6 +65,26 @@
             "value_src": "default"
           }
         }
+      },
+      "busy_led": {
+        "type": "data",
+        "direction": "O",
+        "parameters": {
+          "LAYERED_METADATA": {
+            "value": "undef",
+            "value_src": "default"
+          }
+        }
+      },
+      "requst": {
+        "type": "data",
+        "direction": "I",
+        "parameters": {
+          "LAYERED_METADATA": {
+            "value": "undef",
+            "value_src": "default"
+          }
+        }
       }
     },
     "components": {
@@ -112,6 +132,18 @@
               }
             }
           },
+          "request": {
+            "direction": "I",
+            "parameters": {
+              "LAYERED_METADATA": {
+                "value": "undef",
+                "value_src": "default_prop"
+              }
+            }
+          },
+          "busy": {
+            "direction": "O"
+          },
           "leds": {
             "direction": "O",
             "left": "3",
@@ -145,10 +177,22 @@
           "running_led_0/clk"
         ]
       },
+      "requst_1": {
+        "ports": [
+          "requst",
+          "running_led_0/request"
+        ]
+      },
       "rst_0_1": {
         "ports": [
           "rst",
           "running_led_0/rst"
+        ]
+      },
+      "running_led_0_busy": {
+        "ports": [
+          "running_led_0/busy",
+          "busy_led"
         ]
       },
       "running_led_0_leds": {
