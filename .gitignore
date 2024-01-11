@@ -20,3 +20,7 @@
 # Asciidoc generated outputs
 *.pdf
 *.html
+
+# Verilator builds
+obj_dir
+*.bin

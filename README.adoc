@@ -43,6 +43,37 @@ This will produce a counterexample wave, which can be viewed using:
 gtkwave fifo_nofullskip/engine_0/trace.vcd
 ----
 
+== Install Verilator
+
+Verilator is an open-source simulator for verilog and systemverilog designs, similar in functionality to the xsim simulator provided inside Xilinx Vivado.
+
+On Ubuntu (or any Ubuntu-based distribution), install verilator using
+
+[,bash]
+----
+sudo apt install verilator
+----
+
+The basic steps to use Verilator are:
+
+1. Use `verilator` to convert verilog/systemverilog files into C++ source code
+2. Compile the C++ source code directory created by Verilator to make a static library
+3. Write custom driver code to control the simulation (in C++)
+4. Compile your code, linking the static library, to make the simulation executable
+5. Run the simulation executable
+
+This is achieved as follows:
+
+[,bash]
+----
+# Step 1: verilog -> C++
+verilator -Wall -cc module.v
+
+# Step 2: C++ -> simulation executable
+cd obj_dir # default output for verilator-generated code
+make -f Vmodule.mk # Make the static library Vmodule__ALL.a
+----
+
 
 == Run Vivado as a remote host
 
