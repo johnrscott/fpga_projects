@@ -52,47 +52,27 @@ namespace util {
 	///
 	void tick() {
 
-	    // Evaluate changes due to design inputs, that have been
-	    // modified since last calling tick. These changes should
-	    // occur at least a setup time before the rising clock
-	    // edge. To model the way hardware works in a design where
-	    // the inputs come from combinational logic driven by a
-	    // clock in the same clock domain, these signals would
-	    // ideally change very soon after the previous rising edge.
-	    // However, that is not possible in verilator trace,
-	    // because it is not possible to write trace signals at
-	    // a time before the falling edge (written last tick).
-	    //
 	    tb_->eval();
 	    if (tfp_) {
-		tfp_->dump(10*tick_ - setup_);
+		tfp_->dump(10*tick_ + hold_);
 	    }	    
 
-	    // Now set clock rising edge
-	    tb_->clk_i = 1;
-
-	    // Calling evaluate here will re-evaluate the model based
-	    // on the new clock value, including all combinational
-	    // logic depending on the clock value rising. This
-	    // models propagation delays as zero time.
-	    tb_->eval();
-
-	    // Store the state of the rising clock edge and all
-	    // combinational logic changes that happen as a result.
-	    if (tfp_) {
-		tfp_->dump(10*tick_);
-	    }	    
-
-	    // Falling edge of clock. Evaluate logic
-	    // based on falling edge (nothing will
-	    // change), and save result
+	    // Now set clock falling edge + eval + write
+	    // falling edge to trace
 	    tb_->clk_i = 0;
 	    tb_->eval();
-
-	    // Store the falling edge of the clock (nothing else
-	    // should change, logic is posedge only).
 	    if (tfp_) {
 		tfp_->dump(10*tick_ + 5);
+	    }	    
+
+	    // Rising edge + eval. All signals depending on
+	    // posedge update. Write all signals to trace at
+	    // same time (acts like logic has zero propagation
+	    // delay).
+	    tb_->clk_i = 1;
+	    tb_->eval();
+	    if (tfp_) {
+		tfp_->dump(10*tick_ + 10);
 		tfp_->flush();
 	    }
 
@@ -101,8 +81,8 @@ namespace util {
     private:
 	Vrunning_led *tb_;
 	VerilatedVcdC *tfp_;
-	unsigned tick_{1};
-	unsigned setup_{4};
+	unsigned tick_{0};
+	unsigned hold_{1};
     };
 }
 
