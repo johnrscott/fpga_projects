@@ -2,20 +2,28 @@
 
 /// Wishbone interface
 module running_led(
-   input wire	    clk_i, rst_i, cyc_i, stb_i, we_i,
-   input wire [1:0] adr_i,
-   input wire [3:0] dat_i,
-   output wire	    stall_o, ack_o,
-   output reg [3:0] dat_o
+   input wire	     clk_i, rst_i, cyc_i, stb_i, we_i,
+   input wire [1:0]  adr_i,
+   input wire [3:0]  dat_i,
+   output wire	     stall_o,
+   output reg	     ack_o,
+   output wire [2:0] dat_o,
+   output reg [3:0]  leds
 );
 
+   // Verilator lint_off UNUSED
+   wire unused;
+   assign unused = &{1'b0, cyc_i, adr_i, dat_i} ;
+   // Verilator lint_off UNUSED
+   
+   
    wire busy;
 
    // Immediately acknowledge any transaction, apart from
    // when stalled.
    initial ack_o = 1'b0;
    always @(posedge clk_i)
-     ack_o <= stb_i && !stall_0;
+     ack_o <= stb_i && !stall_o;
 
    // Stall on writes if busy
    assign stall_o = busy && we_i;
@@ -51,9 +59,9 @@ module running_led(
 
    // Update state
    always @(posedge clk_i) begin
-      if (rst)
+      if (rst_i)
 	state <= 0; // Reset to idle
-      else if (request && !busy)
+      else if (stb_i && !busy)
 	state <= 1; // Initiate request
       else if ((state >= 7) && (wait_counter == 0))
 	state <= 0;
