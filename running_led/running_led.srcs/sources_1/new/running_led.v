@@ -1,11 +1,28 @@
 `default_nettype none
 
+/// Wishbone interface
 module running_led(
-   input wire	    clk, rst, request,
-   output wire	    busy,
-   output reg [3:0] leds
+   input wire	    clk_i, rst_i, cyc_i, stb_i, we_i,
+   input wire [1:0] adr_i,
+   input wire [3:0] dat_i,
+   output wire	    stall_o, ack_o,
+   output reg [3:0] dat_o
 );
 
+   wire busy;
+
+   // Immediately acknowledge any transaction, apart from
+   // when stalled.
+   initial ack_o = 1'b0;
+   always @(posedge clk_i)
+     ack_o <= stb_i && !stall_0;
+
+   // Stall on writes if busy
+   assign stall_o = busy && we_i;
+
+   // Always return read data
+   assign dat_o = state;
+   
    // For the formal verification, the cover checks will fail
    // if the clock rate is too high, because too many steps are
    // needed before anything happens. For running on a board,
@@ -19,8 +36,8 @@ module running_led(
    // Define the tick signal that triggers a change of state
    reg [31:0]	    wait_counter = CLK_RATE_HZ - 1;
 
-   always @(posedge clk) begin
-      if (rst)
+   always @(posedge clk_i) begin
+      if (rst_i)
 	wait_counter <= CLK_RATE_HZ - 1;
       else
 	// If the state is not idle, then run the
@@ -33,7 +50,7 @@ module running_led(
    end
 
    // Update state
-   always @(posedge clk) begin
+   always @(posedge clk_i) begin
       if (rst)
 	state <= 0; // Reset to idle
       else if (request && !busy)
@@ -63,12 +80,12 @@ module running_led(
    
 `ifdef FORMAL
 
-   // always @(posedge clk)
+   // always @(posedge clk_i)
    //   if (past_valid && $past(rst))
    //     reset_works: assert((wait_counter == (CLK_RATE_HZ - 1)) && (state == 0));
    
    property p_only_one_led;
-      @(posedge clk) $onehot0(leds);
+      @(posedge clk_i) $onehot0(leds);
    endproperty
    
    // Check that the only valid outputs are exactly one LED
@@ -76,7 +93,7 @@ module running_led(
    only_one_led: assert property(p_only_one_led);
    
    property p_state_valid;
-      @(posedge clk) state < 8;
+      @(posedge clk_i) state < 8;
    endproperty
    
    // For a check like this, notice how it fails if you remote
@@ -86,14 +103,14 @@ module running_led(
    no_invalid_states: assert property(p_state_valid);
 
    property p_wait_counter_in_range;
-      @(posedge clk) wait_counter < CLK_RATE_HZ;
+      @(posedge clk_i) wait_counter < CLK_RATE_HZ;
    endproperty
    
    // Check the counter is always in range
    wait_counter_value: assert property(p_wait_counter_in_range);
 
    property p_led_n_on(int n);
-      @(posedge clk) leds[n] == 1;
+      @(posedge clk_i) leds[n] == 1;
    endproperty
    
    // Check that each LED lights at least once
@@ -104,7 +121,7 @@ module running_led(
    led_3_on: cover property(p_led_n_on(3));
 
    property p_busy_when_leds_on;
-      @(posedge clk) leds != 0 |-> busy;
+      @(posedge clk_i) leds != 0 |-> busy;
    endproperty
    
    // Check busy signal is always asserted when LEDs are on
@@ -116,12 +133,12 @@ module running_led(
    
    // Check that the state increments while busy
    property p_state_increments_while_busy;
-      @(posedge clk) changing_state |=> (state == (3'b111 & ($past(state)+1)));
+      @(posedge clk_i) changing_state |=> (state == (3'b111 & ($past(state)+1)));
    endproperty
 
    state_increments_while_busy: assert property(p_state_increments_while_busy);
    
-   // always @(posedge clk)
+   // always @(posedge clk_i)
    //   if (past_valid && $past(busy) && ($past(wait_counter) == 0) && !$past(rst))
    //     state_increment_by_one: assert (state == $past(state) + 1);
 
