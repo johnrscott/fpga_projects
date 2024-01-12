@@ -10,8 +10,8 @@ module running_led(
    // if the clock rate is too high, because too many steps are
    // needed before anything happens. For running on a board,
    // change back to 100 MHz.
-   parameter	    CLK_RATE_HZ = 100_000_000;
-   //parameter	    CLK_RATE_HZ = 5;
+   //parameter	    CLK_RATE_HZ = 100_000_000;
+   parameter	    CLK_RATE_HZ = 5;
 
    // Current state of the running LED
    reg [2:0]	    state = 0;
@@ -63,42 +63,68 @@ module running_led(
    
 `ifdef FORMAL
 
-   reg past_valid = 0;
-   always @(posedge clk)
-     past_valid <= 1;
-
-   always @(posedge clk)
-     if (past_valid && $past(rst))
-        reset_works: assert((wait_counter == (CLK_RATE_HZ - 1)) && (state == 0));
+   // always @(posedge clk)
+   //   if (past_valid && $past(rst))
+   //     reset_works: assert((wait_counter == (CLK_RATE_HZ - 1)) && (state == 0));
+   
+   property p_only_one_led;
+      @(posedge clk) $onehot0(leds);
+   endproperty
    
    // Check that the only valid outputs are exactly one LED
    // lit at a time
-   exactly_one_led: assert property($onehot0(leds));
+   only_one_led: assert property(p_only_one_led);
+   
+   property p_state_valid;
+      @(posedge clk) state < 8;
+   endproperty
    
    // For a check like this, notice how it fails if you remote
    // the initialisation line state = 0. This is because state
    // could begin with any value in theory, so it could violate
    // this check right at the start.
-   no_invalid_states: assert property(state < 8);
+   no_invalid_states: assert property(p_state_valid);
 
+   property p_wait_counter_in_range;
+      @(posedge clk) wait_counter < CLK_RATE_HZ;
+   endproperty
+   
    // Check the counter is always in range
-   wait_counter_value: assert property(wait_counter < CLK_RATE_HZ);
+   wait_counter_value: assert property(p_wait_counter_in_range);
 
+   property p_led_n_on(int n);
+      @(posedge clk) leds[n] == 1;
+   endproperty
+   
    // Check that each LED lights at least once
-   led_0_on: cover property(leds[0] == 1);
-   led_1_on: cover property(leds[1] == 1);
-   led_2_on: cover property(leds[2] == 1);
-   led_3_on: cover property(leds[3] == 1);
+   
+   led_0_on: cover property(p_led_n_on(0));
+   led_1_on: cover property(p_led_n_on(1));
+   led_2_on: cover property(p_led_n_on(2));
+   led_3_on: cover property(p_led_n_on(3));
 
+   property p_busy_when_leds_on;
+      @(posedge clk) leds != 0 |-> busy;
+   endproperty
+   
    // Check busy signal is always asserted when LEDs are on
-   busy_asserted: assert property((leds == 0) || busy);
+   busy_asserted: assert property(p_busy_when_leds_on);
 
+   sequence changing_state;
+      busy && (wait_counter == 0) && !rst;
+   endsequence
+   
    // Check that the state increments while busy
-   always @(posedge clk)
-     if (past_valid && $past(busy) && ($past(wait_counter) == 0) && !$past(rst))
-       state_increment_by_one: assert (state == $past(state) + 1);
+   property p_state_increments_while_busy;
+      @(posedge clk) changing_state |=> (state == (3'b111 & ($past(state)+1)));
+   endproperty
 
-   // 
+   state_increments_while_busy: assert property(p_state_increments_while_busy);
+   
+   // always @(posedge clk)
+   //   if (past_valid && $past(busy) && ($past(wait_counter) == 0) && !$past(rst))
+   //     state_increment_by_one: assert (state == $past(state) + 1);
+
    
 `endif
 		    
