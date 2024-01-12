@@ -2,13 +2,19 @@
 # to set up the environment. Modify the path to Xilinx tools and
 # the Vivado version depending on your installation.
 #
+# Before running this script
+#
 # Run this (including the dot):
 #
 # . settings.sh
 
 XILINX_PATH=$HOME/tools/Xilinx
 VIVADO_VERSION=2023.2
-OSS_CAD_SUITE_PATH=$HOME/tools/oss-cad-suite
+TABBY_CAD_SUITE_PATH=$HOME/opt/tabby
 
-. $XILINX_PATH/Vivado/$VIVADO_VERSION/settings64.sh
-. $OSS_CAD_SUITE_PATH/environment
+if [[ -z "$YOSYSHQ_LICENSE" ]]; then
+    echo "You must define YOSYSHQ_LICENSE=<path to license> before sourcing this script."
+else
+    . $XILINX_PATH/Vivado/$VIVADO_VERSION/settings64.sh
+    . $TABBY_CAD_SUITE_PATH/environment    
+fi

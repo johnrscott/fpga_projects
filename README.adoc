@@ -2,7 +2,40 @@
 
 This repository contains some example designs based on the https://zipcpu.com/tutorial/[tutorial series] by ZipCPU.
 
-== Installing SymbiYosys (formal verification)
+== Installing Tabby CAD (formal verification)
+
+https://www.yosyshq.com/tabby-cad-datasheet[Tabby CAD Suite] is the commercial version of the formal verification tools offered by YosysHQ. However, a free license is available for academic use or use by the open source hardware community (see the https://www.yosyshq.com/products-and-services[bottom of this page] for more information). 
+
+Using you have a file like `tabby-linux-x64-latest.tgz`, follow these steps to install it. First, copy it to an installation directory and extract it:
+
+[,bash]
+----
+mkdir -p ~/opt/
+mv tabby-linux-x64-latest.tgz ~/opt
+cd ~/opt
+tar xvf tabby-linux-x64-latest.tgz
+----
+
+You should get a directory `~/opt/tabby`. You should also have a license file `tabbycad-eval.zip`. Extract the license file as follows:
+
+[,bash]
+----
+mkdir -p ~/opt/tabby-license
+mv tabbycad-eval.zip ~/opt/tabby-license
+cd ~/opt/tabby-license
+unzip tabbycad-eval.zip
+----
+
+This should extract a file like `tabbycad-eval.lic`. Instructions for setting up the tool are described in `~/opt/tabby/README.md`. There is also an `environment` script to set up the environment automatically. In summary, the following two steps should set up the environment:
+
+[,bash]
+----
+# Replace with path to the license file
+export YOSYSHQ_LICENSE=$HOME/topt/tabby-license/tabby-eval.lic
+. $HOME/opt/tabby/environment
+----
+
+== Installing OSS CAD Suite (formal verification)
 
 https://github.com/YosysHQ/oss-cad-suite-build[OSS CAD Suite] is a set of open source tools for digital logic design, including tools for formal verification.
 
