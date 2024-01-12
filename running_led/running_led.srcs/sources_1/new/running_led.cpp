@@ -18,40 +18,33 @@ namespace util {
     
 	/// Advance the clock by a single tick
 	///
-	/// Calling this function triggers a rising edge of the clock,
-	/// followed by a falling edge (one period in total).
+	/// Calling this function does three things:
 	///
-	/// It is expected that some signals have been set
-	/// (combinationally) before calling this function. As a
-	/// result, this function evals the state of the simulator
-	/// before changing the clock state. In addition, this
-	/// evaluated state is stored in the trace, at the _previous_
-	/// rising edge.
+	/// 1. Evaluates the model based on inputs that
+	/// have been set since last calling tick(). These
+	/// are assumed to be driven from the same clocking
+	/// domain as this clock, so they should change just
+	/// after the last rising edge of the clock. The
+	/// delay is the hold time. Write to the trace file.
 	///
-	/// NOTE: a better order for the simulation would be:
-	/// 1. posedge clock
-	/// 2. update outputs based on new clock edge
-	/// 3. change inputs to drive design
-	/// 4. negedge clock
+	/// 2. After half a clock period, set the falling
+	/// edge of the clock and write to the trace file.
 	///
-	/// This would allow a more realistic wave trace, where all
-	/// signals (inputs and outputs) change shortly after the
-	/// rising edge. This could be achieved with one tick():
-	///
-	/// Outside:
-	/// Change inputs
-	/// 
-	/// tick() function:
-	/// 0. Call eval and write trace at 10*t + hold
-	/// where hold = 1 say (models inputs coming from the same
-	/// clocking domain, with a small propagation delay).
-	/// 1. Negedge, call eval and write trace at 10*t + 5
-	/// 2. Posedge, call eval and write trace at 10*t + 10 (models logic
-	/// as having 0 propagation delay for outputs)
-	///
+	/// 3. After another half clock period, set the rising
+	/// edge of the clock, and evaluate. Write the results
+	/// to the trace file. Since both the rising clock edge
+	/// and all dependent logic are evaluated at the same
+	/// time (and written to the trace file under the same
+	/// timestamp), this models the logic as having zero
+	/// propagation delay.
 	///
 	void tick() {
 
+	    // Assume the user set inputs outside. Evaluate
+	    // the model based on these inputs, and write the
+	    // results to the trace file a hold time after the
+	    // previous rising clock edge (at the end of this
+	    // tick function).
 	    tb_->eval();
 	    if (tfp_) {
 		tfp_->dump(10*tick_ + hold_);
