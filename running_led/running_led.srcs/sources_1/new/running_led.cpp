@@ -36,7 +36,20 @@ namespace util {
 	///
 	/// This would allow a more realistic wave trace, where all
 	/// signals (inputs and outputs) change shortly after the
-	/// rising edge.
+	/// rising edge. This could be achieved with one tick():
+	///
+	/// Outside:
+	/// Change inputs
+	/// 
+	/// tick() function:
+	/// 0. Call eval and write trace at 10*t + hold
+	/// where hold = 1 say (models inputs coming from the same
+	/// clocking domain, with a small propagation delay).
+	/// 1. Negedge, call eval and write trace at 10*t + 5
+	/// 2. Posedge, call eval and write trace at 10*t + 10 (models logic
+	/// as having 0 propagation delay for outputs)
+	///
+	///
 	void tick() {
 
 	    // Evaluate changes due to design inputs, that have been
