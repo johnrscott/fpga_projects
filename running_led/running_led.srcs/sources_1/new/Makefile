@@ -1,14 +1,14 @@
-IFLAGS=-Iobj_dir/ -I/usr/share/verilator/include/
-VERILATED_SRC=/usr/share/verilator/include/verilated.cpp
+VERILATOR_INC=/usr/share/verilator/include/
+IFLAGS=-Iobj_dir/ -I$(VERILATOR_INC)
 
 running_led.bin: running_led.cpp obj_dir/Vrunning_led__ALL.a
-	g++ $^ $(VERILATED_SRC) $(IFLAGS) -o $@
+	g++ $^ $(VERILATOR_INC)/verilated.cpp $(VERILATOR_INC)/verilated_vcd_c.cpp $(IFLAGS) -o $@
 
 obj_dir/Vrunning_led__ALL.a: obj_dir
 	make -C obj_dir -f Vrunning_led.mk
 
 obj_dir: running_led.v
-	verilator -Wall -cc running_led.v
+	verilator -Wall -cc --trace running_led.v
 
 .PHONY: clean
 clean:

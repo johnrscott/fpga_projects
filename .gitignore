@@ -24,3 +24,4 @@
 # Verilator builds
 obj_dir
 *.bin
+*.vcd
