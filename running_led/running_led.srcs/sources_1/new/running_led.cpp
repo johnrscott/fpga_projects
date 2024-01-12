@@ -10,8 +10,8 @@ int main(int argc , char **argv) {
 	tb->clk = k&1;
 	tb->eval();
 
-	std::cout << "k = " << k << std::endl;
-	std::cout << "clk = " << (int)tb->clk << std::endl;
-	std::cout << "led[0] = " << (int)tb->leds << std::endl;
+	std::cout << "k = " << k
+		  << " clk = " << (int)tb->clk
+		  << " led[0] = " << (int)tb->leds << std::endl;
     }
 }
