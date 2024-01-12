@@ -31,6 +31,7 @@ namespace util {
 		tfp_->dump(tick_++);
 		tfp_->flush();
 	    }
+	    
 	}
     private:
 	Vrunning_led *tb_;
@@ -51,7 +52,7 @@ unsigned wishbone_read(
     tb->stb_i = 1;
     tb->adr_i = address;
     
-    // Keep transaction initiating signals
+    // Keep transaction-initiating signals
     // asserting while any stall is ongoing
     while (tb->stall_o) {
 	clk.tick();
@@ -59,7 +60,7 @@ unsigned wishbone_read(
 
     // When stall is over, keep the stb_i
     // etc. asserted for one cycle (starts
-    // the new transaction
+    // the new transaction)
     clk.tick();
 
     // Deassert the strobe
@@ -76,6 +77,43 @@ unsigned wishbone_read(
     return tb->dat_o;
 }
 
+void wishbone_write(
+    util::clock &clk,
+    Vrunning_led *tb,
+    unsigned address,
+    unsigned write_data) {
+
+    // Start the wishbone transaction
+    tb->cyc_i = 1;
+    tb->we_i = 1;
+    tb->stb_i = 1;
+    tb->adr_i = address;
+    tb->dat_i = write_data;
+    
+    // Keep transaction-initiating signals
+    // asserting while any stall is ongoing
+    while (tb->stall_o) {
+	clk.tick();
+    }
+
+    // When stall is over, keep the stb_i
+    // etc. asserted for one cycle (starts
+    // the new transaction)
+    clk.tick();
+
+    // Deassert the strobe
+    tb->stb_i = 0;
+
+    // Wait for the acknowledgement
+    while (!tb->ack_o) {
+	clk.tick();
+    }
+
+    // Deassert cycle signal and read
+    // response data
+    tb->cyc_i = 0;    
+}
+
 int main(int argc , char **argv) {
     Verilated::commandArgs(argc, argv);
     Vrunning_led *tb{new Vrunning_led{}};
@@ -88,11 +126,19 @@ int main(int argc , char **argv) {
 
     util::clock clk{tb, tfp};
 
+    // Perform a read
     wishbone_read(clk, tb, 0);
-    
-    // Delay 5 cycles
-    for (int k = 0; k < 5; k++) {
-	clk.tick();
-    }
+
+    // Perform two writes
+    for (int cycle = 0; cycle < 2; cycle++) {
+
+	// Delay 5 cycles
+	for (int k = 0; k < 5; k++) {
+	    clk.tick();
+	}
+
+	wishbone_write(clk, tb, 0, 0);
+	
+    }    
 
 }
