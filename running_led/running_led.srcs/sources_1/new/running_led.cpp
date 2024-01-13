@@ -90,6 +90,8 @@ unsigned wishbone_read(
     tb->we_i = 0;
     tb->stb_i = 1;
     tb->adr_i = address;
+
+    tb->eval();
     
     // Keep transaction-initiating signals
     // asserting while any stall is ongoing
@@ -128,6 +130,8 @@ void wishbone_write(
     tb->stb_i = 1;
     tb->adr_i = address;
     tb->dat_i = write_data;
+
+    tb->eval();
     
     // Keep transaction-initiating signals
     // asserting while any stall is ongoing
@@ -172,7 +176,7 @@ int main(int argc , char **argv) {
     for (int cycle = 0; cycle < 2; cycle++) {
 
 	// Delay 5 cycles
-	for (int k = 0; k < 5; k++) {
+	for (int k = 0; k < 10; k++) {
 	    clk.tick();
 	}
 
@@ -180,4 +184,11 @@ int main(int argc , char **argv) {
 	
     }    
 
+	// Delay 100 cycles
+	for (int k = 0; k < 100; k++) {
+	    clk.tick();
+	}
+    
+    
+    
 }

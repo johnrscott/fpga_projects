@@ -61,7 +61,7 @@ module running_led(
    always @(posedge clk_i) begin
       if (rst_i)
 	state <= 0; // Reset to idle
-      else if (stb_i && !busy)
+      else if (stb_i && we_i && !busy)
 	state <= 1; // Initiate request
       else if ((state >= 7) && (wait_counter == 0))
 	state <= 0;
