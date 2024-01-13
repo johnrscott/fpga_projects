@@ -16,9 +16,11 @@ module running_led(
    assign unused = &{1'b0, cyc_i, adr_i, dat_i} ;
    // Verilator lint_off UNUSED
    
-   
    wire busy;
 
+   // Current state of the running LED
+   reg [2:0]	    state = 0;
+   
    // Immediately acknowledge any transaction, apart from
    // when stalled.
    initial ack_o = 1'b0;
@@ -35,12 +37,9 @@ module running_led(
    // if the clock rate is too high, because too many steps are
    // needed before anything happens. For running on a board,
    // change back to 100 MHz.
-   //parameter	    CLK_RATE_HZ = 100_000_000;
-   parameter	    CLK_RATE_HZ = 5;
+   parameter	    CLK_RATE_HZ = 100_000_000;
+   //parameter	    CLK_RATE_HZ = 5;
 
-   // Current state of the running LED
-   reg [2:0]	    state = 0;
-   
    // Define the tick signal that triggers a change of state
    reg [31:0]	    wait_counter = CLK_RATE_HZ - 1;
 
@@ -136,19 +135,18 @@ module running_led(
    busy_asserted: assert property(p_busy_when_leds_on);
 
    sequence changing_state;
-      busy && (wait_counter == 0) && !rst;
+      busy && (wait_counter == 0) && !rst_i;
    endsequence
-   
+ 
    // Check that the state increments while busy
    property p_state_increments_while_busy;
       @(posedge clk_i) changing_state |=> (state == (3'b111 & ($past(state)+1)));
    endproperty
 
    state_increments_while_busy: assert property(p_state_increments_while_busy);
-   
-   // always @(posedge clk_i)
-   //   if (past_valid && $past(busy) && ($past(wait_counter) == 0) && !$past(rst))
-   //     state_increment_by_one: assert (state == $past(state) + 1);
+
+   cover_state_increment: cover property(p_state_increments_while_busy);
+
 
    
 `endif

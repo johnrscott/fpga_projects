@@ -1,7 +1,7 @@
 {
   "design": {
     "design_info": {
-      "boundary_crc": "0x808DC5BE02DF8E9C",
+      "boundary_crc": "0x13034E0C829AED43",
       "device": "xc7a35ticsg324-1L",
       "gen_directory": "../../../../running_led.gen/sources_1/bd/top",
       "name": "top",
@@ -85,6 +85,16 @@
             "value_src": "default"
           }
         }
+      },
+      "ack": {
+        "type": "data",
+        "direction": "O",
+        "parameters": {
+          "LAYERED_METADATA": {
+            "value": "undef",
+            "value_src": "default"
+          }
+        }
       }
     },
     "components": {
@@ -100,14 +110,9 @@
           "boundary_crc": "0x0"
         },
         "ports": {
-          "clk": {
-            "type": "clk",
+          "clk_i": {
             "direction": "I",
             "parameters": {
-              "ASSOCIATED_RESET": {
-                "value": "rst",
-                "value_src": "constant"
-              },
               "FREQ_HZ": {
                 "value": "100000000",
                 "value_src": "ip_prop"
@@ -122,8 +127,7 @@
               }
             }
           },
-          "rst": {
-            "type": "rst",
+          "rst_i": {
             "direction": "I",
             "parameters": {
               "POLARITY": {
@@ -132,7 +136,10 @@
               }
             }
           },
-          "request": {
+          "cyc_i": {
+            "direction": "I"
+          },
+          "stb_i": {
             "direction": "I",
             "parameters": {
               "LAYERED_METADATA": {
@@ -141,8 +148,35 @@
               }
             }
           },
-          "busy": {
+          "we_i": {
+            "direction": "I",
+            "parameters": {
+              "LAYERED_METADATA": {
+                "value": "undef",
+                "value_src": "default_prop"
+              }
+            }
+          },
+          "adr_i": {
+            "direction": "I",
+            "left": "1",
+            "right": "0"
+          },
+          "dat_i": {
+            "direction": "I",
+            "left": "3",
+            "right": "0"
+          },
+          "stall_o": {
             "direction": "O"
+          },
+          "ack_o": {
+            "direction": "O"
+          },
+          "dat_o": {
+            "direction": "O",
+            "left": "2",
+            "right": "0"
           },
           "leds": {
             "direction": "O",
@@ -174,24 +208,31 @@
       "clk_wiz_0_clk_out1": {
         "ports": [
           "clk_wiz_0/clk_out1",
-          "running_led_0/clk"
+          "running_led_0/clk_i"
         ]
       },
       "requst_1": {
         "ports": [
           "requst",
-          "running_led_0/request"
+          "running_led_0/stb_i",
+          "running_led_0/we_i"
         ]
       },
       "rst_0_1": {
         "ports": [
           "rst",
-          "running_led_0/rst"
+          "running_led_0/rst_i"
+        ]
+      },
+      "running_led_0_ack_o": {
+        "ports": [
+          "running_led_0/ack_o",
+          "ack"
         ]
       },
       "running_led_0_busy": {
         "ports": [
-          "running_led_0/busy",
+          "running_led_0/stall_o",
           "busy_led"
         ]
       },

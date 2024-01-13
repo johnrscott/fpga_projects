@@ -1,0 +1,12 @@
+= Simple Wishbone Running LED
+
+To run the verilator simulation in this folder, run
+
+[,bash]
+----
+sudo apt install verilator gtkwave # Install prerequisites
+make # build the simulation
+./running_led.bin # run the simulation
+gtkwave running_led_trace.vcd # view the simulation
+----
+

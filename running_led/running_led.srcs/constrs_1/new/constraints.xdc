@@ -18,3 +18,6 @@ set_property PACKAGE_PIN G6 [get_ports busy_led]
 set_property IOSTANDARD LVCMOS33 [get_ports requst]
 set_property PACKAGE_PIN C9 [get_ports requst]
 
+
+set_property IOSTANDARD LVCMOS33 [get_ports ack]
+set_property PACKAGE_PIN G3 [get_ports ack]
