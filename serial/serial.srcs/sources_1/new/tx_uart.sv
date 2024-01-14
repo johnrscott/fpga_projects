@@ -5,7 +5,7 @@ module tx_uart(
 );
 
    parameter CLOCK_RATE_HZ = 100_000_000;
-   parameter BAUD_RATE_HZ = 115_200;
+   parameter BAUD_RATE_HZ = 50_000_000; //115_200;
    parameter CLOCKS_PER_BAUD = CLOCK_RATE_HZ / BAUD_RATE_HZ;
 
    logic [31:0]	baud_counter = CLOCKS_PER_BAUD - 1; // counts down, bit sent on zero
@@ -39,7 +39,7 @@ module tx_uart(
    always_ff @(posedge clk) begin
       if (write && !busy) begin
 	 // Load new data to transmit
-	 tx_data <= { data, 1'b0 };
+	 tx_data <= { 1'b1, data, 1'b0 };
 	 // Start a new transmission
 	 state <= START_BIT;
       end
@@ -47,7 +47,7 @@ module tx_uart(
 	 // Only update state on baud strobe
 	 if (busy && (state < STOP_BIT)) begin
 	    tx_data <= tx_data[9:1];
-	    state++;
+	    state = state + 1;
 	 end
 	 else begin
 	    // Back to idle
