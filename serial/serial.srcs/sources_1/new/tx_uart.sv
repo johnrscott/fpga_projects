@@ -1,11 +1,11 @@
 module tx_uart(
-   input logic	     clk, write,
+   input logic	     clk, rst, write,
    input logic [7:0] data,
    output logic	     busy, tx
 );
 
    parameter CLOCK_RATE_HZ = 100_000_000;
-   parameter BAUD_RATE_HZ = 115_200;
+   parameter BAUD_RATE_HZ = 50_000_000; //115_200;
    parameter CLOCKS_PER_BAUD = CLOCK_RATE_HZ / BAUD_RATE_HZ;
 
    logic [31:0]	baud_counter = CLOCKS_PER_BAUD - 1; // counts down, bit sent on zero
@@ -19,21 +19,21 @@ module tx_uart(
    logic [9:0] tx_data = '1;
    assign tx = tx_data[0];
 
-   enum [4:0] { IDLE, START_BIT, DATA[8], STOP_BIT } state;
+   enum /*[4:0]*/ { IDLE, START_BIT, DATA[8], STOP_BIT } state = IDLE;
 
-   initial { busy, state } = { 1'b0, IDLE };
+   //initial { busy, state } = { 1'b0, IDLE };
 
    assign busy = (state != IDLE);
    
    always_ff @(posedge clk) begin
       if (write && !busy)
 	// If transmit starts, reset baud counter
-	counter <= CLOCKS_PER_BAUD - 1;
-      else if (counter > 0)
-	counter--;
+	baud_counter <= CLOCKS_PER_BAUD - 1;
+      else if (baud_counter > 0)
+	baud_counter--;
       else if (busy)
 	// If transmitting, then restart baud counter
-	counter <= CLOCKS_PER_BAUD - 1;
+	baud_counter <= CLOCKS_PER_BAUD - 1;
    end
    
    always_ff @(posedge clk) begin
