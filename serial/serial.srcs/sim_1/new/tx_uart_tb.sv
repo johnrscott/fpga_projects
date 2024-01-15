@@ -21,7 +21,7 @@ module tx_uart_tb;
    initial begin
    
       cb.rst <= 0;
-      cb.data <= "h";
+      cb.data <= "o";
 
       ##3 cb.write <= 1;
       //##1 cb.write <= 0;
